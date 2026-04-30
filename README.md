@@ -1,89 +1,193 @@
-# Civiq — Your Civic Election Co-Pilot 🗳️
+# Civiq
 
-> A personalized, adaptive election education journey built for every Indian voter. Designed with enterprise-grade architecture for maximum code quality, security, and performance.
+Civiq is an AI-assisted civic education web app focused on Indian elections. It guides users through a practical journey: registration checks, booth discovery, candidate lookup, ballot understanding, and reminder setup.
 
-## 🔗 Live Demo & Repository
-**GitHub Repository:** [Insert Public GitHub Repo URL]
-**Live Application:** [Insert Cloud Run URL]
+## Highlights
 
----
+- React + Vite single page application
+- Express backend proxy for Gemini, Maps, Search, TTS, and quiz generation
+- Adaptive chat behavior (confused, skeptical, engaged, neutral)
+- Optional Firestore session persistence via Firebase Admin
+- Caching for Maps and Custom Search routes
+- Jest + React Testing Library test setup with CI workflow
 
-## 🎯 Vertical Chosen
-**Election Process Education**
+## Tech Stack
 
-## 💡 Approach & Logic
-Most election tools dump static information at users. Civiq does the opposite — it detects how the user feels (confused, skeptical, engaged) using Gemini AI and adapts its tone, depth, and language in real time.
+- Frontend: React 18, React Router 6, Vite, Tailwind, Framer Motion
+- Backend: Express 5, Helmet, CORS, Compression, Express Rate Limit
+- AI and APIs: Gemini API, Google Maps API, Google Custom Search, Google Text-to-Speech, Google Calendar
+- Data: Firebase client SDK and optional Firebase Admin (Firestore)
+- Testing: Jest, Babel, React Testing Library
 
-Instead of a generic chatbot, Civiq is a **behavior-change journey engine**. It guides users through 5 concrete steps, tracking their progress persistently, and ensuring they actually show up to vote.
+## Repository Structure
 
-## 🧠 How The Solution Works
-1. **Onboarding:** User enters their state and voting experience level.
-2. **Check Registration:** Integrates official ECI portal links with contextual AI guidance.
-3. **Find Polling Booth:** Uses Google Maps API to auto-detect and cache the nearest polling booth.
-4. **Know Your Candidates:** Google Custom Search fetches real-time candidate data based on location.
-5. **Understand Your Ballot:** An interactive, AI-guided walkthrough of the voting process.
-6. **Set Reminder:** One-tap Google Calendar API integration.
-
----
-
-## 🏆 Evaluation Focus Areas (How We Meet The Criteria)
-
-### 1. Code Quality
-- **Architecture:** Organized into a clean, domain-driven structure (`components`, `hooks`, `services`, `pages`).
-- **Maintainability:** Extensive JSDoc `@typedef` annotations simulate TypeScript for robust intellisense.
-- **Resilience:** Implemented strict React `ErrorBoundary` components to prevent app crashes and ensure graceful degradation.
-
-### 2. Security
-- **Hardened Server:** Express backend secured with `helmet` for Content Security Policy (CSP) enforcement.
-- **Abuse Prevention:** Integrated `express-rate-limit` to prevent brute-force attacks and API quota exhaustion.
-- **Data Privacy:** Anonymous Firestore sessions ensure zero Personally Identifiable Information (PII) is permanently retained.
-
-### 3. Efficiency
-- **API Caching:** Utilizes `node-cache` on the backend to cache Google Maps and Custom Search API responses, drastically reducing latency and API costs.
-- **Payload Compression:** Express server leverages `compression` middleware (Brotli/Gzip) to minimize network transfer times.
-- **Frontend Optimization:** Extensive use of `React.memo` and `useCallback` to prevent unnecessary component re-renders.
-
-### 4. Testing
-- **High Coverage:** Jest and React Testing Library provide comprehensive unit testing across core hooks (`useJourneyProgress`, `useChat`) and UI components (`ChatBubble`, `QuizModal`).
-- **CI/CD:** Automated `.github/workflows/test.yml` ensures all tests and ESLint checks pass on every commit.
-
-### 5. Accessibility
-- **WCAG 2.1 AA Compliant:** Semantic HTML (`<main>`, `<nav>`, `<article>`) guarantees proper document structure.
-- **Screen Reader Support:** Deep integration of `aria-live="polite"` for dynamic chat updates, comprehensive `aria-labels`, and Native TTS fallback.
-- **Keyboard Navigation:** Strict focus trapping and `Escape` key management inside interactive modals.
-
-### 6. Google Services
-Our solution deeply integrates the Google Cloud ecosystem:
-- **Gemini 1.5 Flash:** Powers the core adaptive chat engine and real-time quiz generation.
-- **Google Maps JS API:** Provides geolocation and nearest polling booth detection.
-- **Google Calendar API:** Enables seamless election day reminders.
-- **Google Text-to-Speech:** Accessible read-aloud functionality for every AI message.
-- **Google Custom Search:** Fetches real-time, verified candidate information.
-- **Cloud Run & Firebase:** Serverless, auto-scaling deployment with persistent session tracking.
-
----
-
-## 📌 Assumptions Made
-- The application targets Indian state and general elections.
-- Polling booth search uses Google Places API as a proxy (since the official ECI API is not publicly accessible).
-- Sessions are completely anonymous — no personal data is stored beyond the scope of the active session.
-
-## ⚙️ Run Locally
-```bash
-git clone [repo-url]
-cd civiq
-cp .env.example .env
-# Fill in all API keys in .env
-npm install
-npm run dev          # starts Vite client on :5173
-npm run server       # starts Express backend on :8081
+```text
+.
+|- src/
+|  |- components/
+|  |- hooks/
+|  |- pages/
+|  |- services/
+|  |- tests/
+|- server/
+|  |- lib/
+|  |- middleware/
+|  |- routes/
+|- public/
+|- .github/workflows/test.yml
+|- package.json
 ```
 
-## 🧪 Run Tests
+## Prerequisites
+
+- Node.js 18+ (Node 20 recommended)
+- npm 9+
+- Google API credentials for the services you plan to use
+- Firebase project credentials if you want Firestore writes
+
+## Environment Variables
+
+Copy .env.example to .env and fill values.
+
+Current .env.example includes:
+
+```env
+GEMINI_API_KEY=
+VITE_MAPS_KEY=
+VITE_CALENDAR_CLIENT_ID=
+VITE_FIREBASE_CONFIG=
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+```
+
+Additional server variables used by routes (recommended to add in .env):
+
+```env
+PORT=8081
+GEMINI_MODEL=
+GEMINI_CHAT_MODEL=
+GEMINI_QUIZ_MODEL=
+MAPS_API_KEY=
+TTS_API_KEY=
+SEARCH_API_KEY=
+SEARCH_ENGINE_ID=
+```
+
+Notes:
+
+- FIREBASE_PRIVATE_KEY should keep escaped newlines (\\n) in .env.
+- VITE_FIREBASE_CONFIG is expected as a JSON string for frontend initialization.
+- Frontend service files currently call backend at http://localhost:8081 directly.
+
+## Local Development
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Run frontend and backend together:
+
+```bash
+npm run dev:full
+```
+
+Or run separately:
+
+```bash
+npm run dev
+npm run server
+```
+
+Default ports:
+
+- Frontend (Vite): 5173
+- Backend (Express): 8081 unless PORT is set
+
+Health check:
+
+```text
+GET http://localhost:8081/api/chat/health
+```
+
+## Available Scripts
+
+- npm run dev: start Vite dev server
+- npm run server: start Express backend
+- npm run dev:server: start backend with file watch
+- npm run dev:full: run frontend and backend together
+- npm run build: create production frontend build
+- npm run preview: preview built frontend
+- npm run lint: run ESLint
+- npm test: run Jest with coverage
+- npm start: start backend server (production style)
+
+## API Endpoints
+
+All backend endpoints are under /api.
+
+- GET /api/chat/health
+- POST /api/chat
+- GET /api/maps/booth?lat=&lng=&pincode=
+- GET /api/search/candidates?state=&constituency=
+- POST /api/tts
+- POST /api/quiz/generate
+
+## Testing and CI
+
+Run tests locally:
+
 ```bash
 npm test
 ```
 
----
+CI workflow exists at .github/workflows/test.yml and runs:
 
-*Built for Google Antigravity Hackathon 2026.*
+- npm ci
+- npm run lint
+- npm test
+
+## Build and Deployment
+
+Build frontend bundle:
+
+```bash
+npm run build
+```
+
+Production server serves files from dist and also exposes API routes.
+
+Docker:
+
+- Multi-stage Dockerfile is included.
+- Container exposes port 8080.
+- Ensure runtime PORT and API env vars are set in your deployment platform.
+
+## Security and Reliability
+
+- Helmet CSP configuration enabled
+- API rate limiting at /api/\*
+- Gzip/Brotli-style compression middleware
+- Graceful shutdown handling for SIGINT and SIGTERM
+- Firestore persistence fails safely when Firebase Admin credentials are missing
+
+## Known Limitations
+
+- Frontend service files use hardcoded backend base URL http://localhost:8081, so production deployments should either:
+  - refactor to environment-based API base URL, or
+  - run frontend and backend on same origin with compatible routing
+- Election reminder dates in calendar service are static and should be updated as schedules change
+
+## Troubleshooting
+
+- Port already in use: change PORT or stop existing process
+- Blank AI responses: verify GEMINI*API_KEY and GEMINI*\* model vars
+- Maps/search issues: verify MAPS_API_KEY, SEARCH_API_KEY, SEARCH_ENGINE_ID
+- TTS failures: verify TTS_API_KEY and API enablement in Google Cloud
+- Firestore write warnings: add FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY
+
+## License
+
+No license file is currently included. Add a LICENSE file if you plan to open-source distribution terms.

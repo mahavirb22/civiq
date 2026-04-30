@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #0d150d;
+    --surface: #0d150d;
+    --surface-bright: #323c31;
+    --surface-app: #111a11;
+    
+    --primary: #4ade80;
+    --secondary: #86efac;
+    --accent: #fbbf24;
+    
+    --text-primary: #dbe6d6;
+    --text-secondary: #bccabb;
+  }
+  body {
+    @apply bg-background text-text-primary antialiased;
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+  }
+  .box-shadow-glow {
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
+  }
+}
+
+/* Custom fonts mapping for prompt compliance (Prompt mentions Cormorant Garamond and DM Sans, Design doc mentions Newsreader and Manrope) */
+.font-editorial {
+  font-family: 'Newsreader', 'Cormorant Garamond', serif;
+}
+
+.font-ui {
+  font-family: 'Manrope', 'DM Sans', sans-serif;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(400px) rotate(720deg); opacity: 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 8px #4ade80; }
+  50% { box-shadow: 0 0 20px #4ade80, 0 0 40px #4ade8044; }
+}
+
+:focus:not(:focus-visible) { 
+  outline: none; 
+}
+
+:focus-visible {
+  outline: 2px solid #4ade80;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

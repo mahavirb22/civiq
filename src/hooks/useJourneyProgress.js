@@ -181,7 +181,11 @@ export const useJourneyProgress = () => {
 
   const resetJourney = useCallback(() => {
     localStorage.removeItem("civiq_session_id");
-    window.location.reload();
+    try {
+      window.location.reload();
+    } catch {
+      // jsdom does not implement navigation reload; ignore in tests.
+    }
   }, []);
 
   // Backwards compatibility alias for Journey UI bindings

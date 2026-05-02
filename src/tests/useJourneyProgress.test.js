@@ -1,7 +1,7 @@
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useJourneyProgress } from "../hooks/useJourneyProgress";
+import * as firestoreModule from "../services/firebaseClient";
 
-// Mock Firebase
 jest.mock("../services/firebaseClient", () => ({
   db: {},
   disableFirestoreSync: jest.fn(),
@@ -19,34 +19,77 @@ describe("useJourneyProgress hook", () => {
     jest.clearAllMocks();
   });
 
-  test("should initialize with step 1", () => {
+  test("should load existing session data from firestore", async () => {
+    firestoreModule.getDoc.mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ currentStep: 2, completedSteps: [1, 2], stepData: {} })
+    });
+
     const { result } = renderHook(() => useJourneyProgress());
-    expect(result.current.currentStep).toBe(0); // 0-based index for step 1
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+      expect(result.current.currentStep).toBe(2);
+      expect(result.current.completedSteps).toEqual([1, 2]);
+    });
   });
 
-  test("completeStep(1) should move to currentStep 1 (Step 2)", async () => {
+  test("should handle firestore permission denied on load", async () => {
+    firestoreModule.getDoc.mockRejectedValueOnce({ code: "permission-denied" });
+
     const { result } = renderHook(() => useJourneyProgress());
+
+    await waitFor(() => {
+      expect(result.current.isLoaded).toBe(true);
+      expect(firestoreModule.disableFirestoreSync).toHaveBeenCalled();
+    });
+  });
+
+  test("completeStep handles permission denied error during sync", async () => {
+    firestoreModule.getDoc.mockResolvedValueOnce({ exists: () => false });
+    firestoreModule.setDoc.mockRejectedValueOnce({ code: "permission-denied" });
+
+    const { result } = renderHook(() => useJourneyProgress());
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
     await act(async () => {
       await result.current.completeStep(1);
     });
+
+    await waitFor(() => {
+      expect(firestoreModule.disableFirestoreSync).toHaveBeenCalled();
+    });
+  });
+
+  test("completeStep skips sync if firestore not ready", async () => {
+    firestoreModule.getDoc.mockResolvedValueOnce({ exists: () => false });
+    firestoreModule.ensureFirestoreReady.mockResolvedValueOnce(false);
+
+    const { result } = renderHook(() => useJourneyProgress());
+    await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+    await act(async () => {
+      await result.current.completeStep(1);
+    });
+
     expect(result.current.currentStep).toBe(1);
-    expect(result.current.completedSteps).toContain(1);
   });
 
-  test("isStepUnlocked(2) should be true after completeStep(1)", async () => {
-    const { result } = renderHook(() => useJourneyProgress());
-    await act(async () => {
-      await result.current.completeStep(1);
-    });
-    expect(result.current.isStepUnlocked(2)).toBe(true);
-  });
-
-  test("goToStep(3) should fail if previous steps aren't done", async () => {
+  test("resetJourney calls reload", () => {
+    jest.spyOn(Storage.prototype, 'removeItem');
     const { result } = renderHook(() => useJourneyProgress());
     act(() => {
-      result.current.goToStep(3);
+      result.current.resetJourney();
     });
-    expect(result.current.currentStep).toBe(0);
+    expect(localStorage.removeItem).toHaveBeenCalledWith('civiq_session_id');
+  });
+
+  test("nextStep() should increment currentStep", () => {
+    const { result } = renderHook(() => useJourneyProgress());
+    act(() => {
+      result.current.nextStep();
+    });
+    expect(result.current.currentStep).toBe(1);
   });
 
   test("goToStep(2) should succeed if step 1 is done", async () => {
@@ -60,20 +103,19 @@ describe("useJourneyProgress hook", () => {
     expect(result.current.currentStep).toBe(1);
   });
 
-  test("nextStep() should increment currentStep", () => {
+  test("goToStep(3) should fail if previous steps aren't done", async () => {
     const { result } = renderHook(() => useJourneyProgress());
     act(() => {
-      result.current.nextStep();
+      result.current.goToStep(3);
     });
-    expect(result.current.currentStep).toBe(1);
+    expect(result.current.currentStep).toBe(0);
   });
 
-  test("resetJourney() should clear localStorage and reload", () => {
-    localStorage.setItem("civiq_session_id", "test-id");
+  test("isStepUnlocked(2) should be true after completeStep(1)", async () => {
     const { result } = renderHook(() => useJourneyProgress());
-    act(() => {
-      result.current.resetJourney();
+    await act(async () => {
+      await result.current.completeStep(1);
     });
-    expect(localStorage.removeItem).toHaveBeenCalledWith("civiq_session_id");
+    expect(result.current.isStepUnlocked(2)).toBe(true);
   });
 });

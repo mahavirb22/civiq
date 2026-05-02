@@ -1,4 +1,5 @@
 import express from 'express';
+import { query, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 import NodeCache from 'node-cache';
 dotenv.config();
@@ -6,8 +7,19 @@ dotenv.config();
 const router = express.Router();
 const searchCache = new NodeCache({ stdTTL: 86400 }); // 24 hours
 
-router.get('/candidates', async (req, res) => {
-  try {
+router.get(
+  '/candidates',
+  [
+    query('state').optional().isString().trim().escape().isLength({ max: 50 }),
+    query('constituency').optional().isString().trim().escape().isLength({ max: 50 }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
     const { state, constituency } = req.query;
 
     const cacheKey = `search_${state}_${constituency}`;

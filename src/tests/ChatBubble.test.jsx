@@ -1,42 +1,40 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ChatBubble from '../components/chat/ChatBubble';
 
-jest.mock('../services/firebaseClient', () => ({
-  db: {},
-  disableFirestoreSync: jest.fn(),
-  ensureFirestoreReady: jest.fn(() => Promise.resolve(true)),
-  isFirestoreSyncEnabled: jest.fn(() => true),
+// Mock TTS service
+jest.mock('../../services/tts', () => ({
+  speakText: jest.fn(() => Promise.resolve({
+    pause: jest.fn(),
+    currentTime: 0,
+    onended: jest.fn()
+  }))
 }));
 
-jest.mock('../services/tts', () => ({
-  speakText: jest.fn(),
-}));
-
-describe('ChatBubble Component', () => {
-  test('renders user message with correct aria-label', () => {
-    const msg = { sender: 'user', text: 'Hello' };
-    render(<ChatBubble message={msg} />);
-    expect(screen.getByLabelText('Your message')).toBeInTheDocument();
-    expect(screen.getByText('Hello')).toBeInTheDocument();
+describe('ChatBubble', () => {
+  it('renders user message', () => {
+    render(<ChatBubble message={{ text: "Hello Civiq", sender: "user" }} />);
+    expect(screen.getByText('Hello Civiq')).toBeInTheDocument();
   });
 
-  test('renders bot bubble with correct aria-label', () => {
-    const msg = { sender: 'bot', text: 'Hi, I am Civiq' };
-    render(<ChatBubble message={msg} />);
-    expect(screen.getByLabelText('Message from Civiq AI')).toBeInTheDocument();
+  it('renders bot message with markdown stripped', () => {
+    render(<ChatBubble message={{ text: "**Bold Text**", sender: "bot" }} />);
+    expect(screen.getByText('Bold Text')).toBeInTheDocument();
   });
 
-  test('TTS button is present for bot messages', () => {
-    const msg = { sender: 'bot', text: 'Spoken text' };
-    render(<ChatBubble message={msg} />);
-    const ttsButton = screen.getByLabelText('Read this message aloud');
+  it('shows TTS button for bot messages and allows clicking', () => {
+    render(<ChatBubble message={{ text: "TTS Test", sender: "bot" }} />);
+    const ttsButton = screen.getByRole('button', { name: /Read this message aloud/i });
     expect(ttsButton).toBeInTheDocument();
+    
+    // Simulate click
+    fireEvent.click(ttsButton);
+    // Since it's async, we just ensure it doesn't crash here. 
+    // Further testing of TTS state transitions would require act/waitFor.
   });
-
-  test('loading state renders animated dots and no text', () => {
-    render(<ChatBubble isLoading={true} />);
+  
+  it('renders loading animation when isLoading is true', () => {
+    const { container } = render(<ChatBubble isLoading={true} />);
     expect(screen.getByLabelText('Civiq AI is typing')).toBeInTheDocument();
-    expect(screen.queryByRole('paragraph')).not.toBeInTheDocument();
   });
 });

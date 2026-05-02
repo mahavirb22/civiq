@@ -1,4 +1,5 @@
 import express from 'express';
+import { query, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 import NodeCache from 'node-cache';
 dotenv.config();
@@ -24,8 +25,20 @@ function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
 /**
  * GET /api/maps/booth?lat=&lng=&pincode=
  */
-router.get('/booth', async (req, res) => {
-  try {
+router.get(
+  '/booth',
+  [
+    query('lat').optional().isFloat().withMessage('lat must be a number'),
+    query('lng').optional().isFloat().withMessage('lng must be a number'),
+    query('pincode').optional().isString().trim().escape().isLength({ max: 10 }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
     let { lat, lng, pincode } = req.query;
 
     const cacheKey = `booth_${lat}_${lng}_${pincode}`;

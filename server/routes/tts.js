@@ -1,11 +1,22 @@
 import express from 'express';
+import { body, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
 
-router.post('/', async (req, res) => {
-  try {
+router.post(
+  '/',
+  [
+    body('text').isString().trim().notEmpty().withMessage("Text required").isLength({ max: 500 }).withMessage("Text too long"),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
     let { text } = req.body;
     if (!text) return res.status(400).json({ error: "Text required" });
 

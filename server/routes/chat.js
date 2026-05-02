@@ -1,4 +1,5 @@
 import express from "express";
+import { body, validationResult } from "express-validator";
 import { db } from "../middleware/auth.js";
 import { FieldValue } from "firebase-admin/firestore";
 import {
@@ -53,20 +54,31 @@ const fallbackSuggestedChips = [
   "How do I start?",
 ];
 
-router.post("/", async (req, res) => {
-  try {
-    const {
-      message,
-      sessionId,
-      step,
-      state,
-      firstVoter,
-      history = [],
-    } = req.body;
-
-    if (!message) {
-      return res.status(400).json({ error: "Message is required" });
+router.post(
+  "/",
+  [
+    body("message").isString().trim().notEmpty().withMessage("Message is required").isLength({ max: 1000 }).withMessage("Message too long"),
+    body("sessionId").optional().isString().trim(),
+    body("step").optional().isInt({ min: 1, max: 5 }).toInt(),
+    body("state").optional().isString().trim().escape(),
+    body("firstVoter").optional().isBoolean().toBoolean(),
+    body("history").optional().isArray(),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
+
+    try {
+      const {
+        message,
+        sessionId,
+        step,
+        state,
+        firstVoter,
+        history = [],
+      } = req.body;
 
     const { replyText, emotion, suggestedChips } = await withGeminiModel(
       async (model) => {

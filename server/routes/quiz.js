@@ -1,12 +1,23 @@
 import express from 'express';
+import { body, validationResult } from 'express-validator';
 import { withGeminiModel } from "../lib/gemini.js";
 import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
 
-router.post('/generate', async (req, res) => {
-  try {
+router.post(
+  '/generate',
+  [
+    body('state').optional().isString().trim().escape().isLength({ max: 50 }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    try {
     const { state = "India" } = req.body;
 
     const prompt = `Generate exactly 10 multiple choice questions about Indian election process,
